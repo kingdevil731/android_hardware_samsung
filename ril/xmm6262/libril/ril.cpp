@@ -256,7 +256,7 @@ extern "C" const char * callStateToString(RIL_CallState);
 extern "C" const char * radioStateToString(RIL_RadioState);
 
 #ifdef RIL_SHLIB
-extern "C" void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+extern "C" void RIL_onUnsolicitedResponse(int unsolResponse, void *data,
                                 size_t datalen);
 #endif
 
@@ -3630,7 +3630,7 @@ processRadioState(RIL_RadioState newRadioState) {
 }
 
 extern "C"
-void RIL_onUnsolicitedResponse(int unsolResponse, const void *data,
+void RIL_onUnsolicitedResponse(int unsolResponse, void *data,
                                 size_t datalen)
 {
     int unsolResponseIndex;
