@@ -1712,46 +1712,7 @@ static int responseStrings(Parcel &p, void *response, size_t responselen) {
 }
 
 static int responseStringsNetworks(Parcel &p, void *response, size_t responselen) {
-    int numStrings;
-    int inQANElements = 5;
-    int outQANElements = 4;
-
-    if (response == NULL && responselen != 0) {
-        RLOGE("invalid response: NULL");
-        return RIL_ERRNO_INVALID_RESPONSE;
-    }
-    if (responselen % sizeof(char *) != 0) {
-        RLOGE("invalid response length %d expected multiple of %d\n",
-            (int)responselen, (int)sizeof(char *));
-        return RIL_ERRNO_INVALID_RESPONSE;
-    }
-
-    if (response == NULL) {
-        p.writeInt32 (0);
-    } else {
-        char **p_cur = (char **) response;
-        int j = 0;
-
-        numStrings = responselen / sizeof(char *);
-        p.writeInt32 ((numStrings / inQANElements) * outQANElements);
-
-        /* each string*/
-        startResponse;
-        for (int i = 0 ; i < numStrings ; i++) {
-            /* Samsung is sending 5 elements, upper layer expects 4.
-               Drop every 5th element here */
-            if (j == outQANElements) {
-                j = 0;
-            } else {
-                appendPrintBuf("%s%s,", printBuf, (char*)p_cur[i]);
-                writeStringToParcel (p, p_cur[i]);
-                j++;
-            }
-        }
-        removeLastChar;
-        closeResponse;
-    }
-    return 0;
+    return responseStrings(p, response, responselen, true);
 }
 
 /** response is a char **, pointing to an array of char *'s */
@@ -1763,7 +1724,7 @@ static int responseStrings(Parcel &p, void *response, size_t responselen, bool n
         return RIL_ERRNO_INVALID_RESPONSE;
     }
     if (responselen % sizeof(char *) != 0) {
-        RLOGE("invalid response length %d expected multiple of %d\n",
+        RLOGE("responseStrings: invalid response length %d expected multiple of %d\n",
             (int)responselen, (int)sizeof(char *));
         return RIL_ERRNO_INVALID_RESPONSE;
     }
@@ -1774,11 +1735,17 @@ static int responseStrings(Parcel &p, void *response, size_t responselen, bool n
         char **p_cur = (char **) response;
 
         numStrings = responselen / sizeof(char *);
-        p.writeInt32 (numStrings);
+        if (network_search) {
+            p.writeInt32 ((numStrings / 5) * 4);
+        } else {
+            p.writeInt32 (numStrings);
+        }
 
         /* each string*/
         startResponse;
         for (int i = 0 ; i < numStrings ; i++) {
+            if (network_search && ((i + 1) % 5 == 0))
+                continue;
             appendPrintBuf("%s%s,", printBuf, (char*)p_cur[i]);
             writeStringToParcel (p, p_cur[i]);
         }
